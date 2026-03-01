@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meus Filmes, Livros e Jogos</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="shortcut icon" href="icon-512x512.png" type="image/png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: white;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .search-bar {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 15px;
+            transition: border-color 0.3s;
+        }
+
+        .search-bar:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        /* Filtros de tipo */
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+
+        /* Accordion list */
+        .items-list {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .accordion-item {
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .accordion-item:last-child {
+            border-bottom: none;
+        }
+
+        .accordion-header {
+            display: flex;
+            align-items: center;
+            padding: 13px 15px;
+            cursor: pointer;
+            background: white;
+            transition: background 0.15s;
+            user-select: none;
+            gap: 10px;
+        }
+
+        .accordion-header:hover {
+            background: #f7fdf7;
+        }
+
+        .accordion-header.open {
+            background: #f0faf0;
+        }
+
+        .type-icon {
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        .accordion-title {
+            flex: 1;
+            font-size: 0.98rem;
+            font-weight: 600;
+            color: #222;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .type-badge {
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            color: white;
+            flex-shrink: 0;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .badge-filme { background: #e91e8c; }
+        .badge-livro { background: #2196F3; }
+        .badge-jogo  { background: #ff9800; }
+
+        .accordion-arrow {
+            flex-shrink: 0;
+            font-size: 0.75rem;
+            color: #aaa;
+            transition: transform 0.25s;
+        }
+
+        .accordion-header.open .accordion-arrow {
+            transform: rotate(180deg);
+        }
+
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fafafa;
+        }
+
+        .accordion-body.open {
+            max-height: 400px;
+        }
+
+        .accordion-inner {
+            padding: 12px 15px 14px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        .meta-date {
+            font-size: 0.8rem;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .analysis-text {
+            font-size: 0.9rem;
+            color: #444;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .no-analysis {
+            font-size: 0.85rem;
+            color: #bbb;
+            font-style: italic;
+            margin-bottom: 12px;
+        }
+
+        .item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Paginação */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .page-btn {
+            padding: 7px 13px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+        }
+
+        .page-btn.current {
+            background: #4CAF50;
+            border-color: #4CAF50;
+            color: white;
+            font-weight: bold;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.4;
+            cursor: default;
+        }
+
+        .page-info {
+            font-size: 0.82rem;
+            color: #888;
+        }
+
+        /* Formulário */
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .form-group input, .form-group textarea, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin: 3px;
+            transition: background 0.3s;
+        }
+
+        .btn:hover { background: #45a049; }
+        .btn-secondary { background: #2196F3; }
+        .btn-secondary:hover { background: #1976D2; }
+        .btn-danger { background: #f44336; }
+        .btn-danger:hover { background: #d32f2f; }
+        .btn-sm { padding: 6px 12px; font-size: 0.82rem; }
+
+        .file-input { margin: 10px 0; }
+
+        .export-import {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .no-items {
+            text-align: center;
+            color: #666;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .hidden { display: none; }
+
+        @media (max-width: 600px) {
+            .header h1 { font-size: 1.4rem; }
+            .content { padding: 12px; }
+            .export-import { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Meus Filmes, Livros e Jogos</h1>
+            <p>Gerencie sua coleção de mídias finalizadas</p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('list')">📋 Lista</button>
+            <button class="tab" onclick="showTab('add')">➕ Adicionar</button>
+            <button class="tab" onclick="showTab('export')">💾 Backup</button>
+        </div>
+
+        <div class="content">
+            <!-- Aba Lista -->
+            <div id="list-tab" class="tab-content">
+                <input type="text" class="search-bar" id="search" placeholder="🔍 Buscar por título...">
+
+                <div class="filter-bar">
+                    <button class="filter-btn active" data-filter="todos" onclick="setFilter('todos', this)">Todos</button>
+                    <button class="filter-btn" data-filter="filme" onclick="setFilter('filme', this)">🎬 Filmes</button>
+                    <button class="filter-btn" data-filter="livro" onclick="setFilter('livro', this)">📖 Livros</button>
+                    <button class="filter-btn" data-filter="jogo" onclick="setFilter('jogo', this)">🎮 Jogos</button>
+                </div>
+
+                <div id="items-container">
+                    <div class="no-items">Nenhum item encontrado. Adicione alguns filmes, livros ou jogos!</div>
+                </div>
+
+                <div id="pagination" class="pagination"></div>
+            </div>
+
+            <!-- Aba Adicionar -->
+            <div id="add-tab" class="tab-content hidden">
+                <form id="item-form">
+                    <div class="form-group">
+                        <label for="title">Título *</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="type">Tipo *</label>
+                        <select id="type" required>
+                            <option value="">Selecione...</option>
+                            <option value="filme">🎬 Filme</option>
+                            <option value="livro">📖 Livro</option>
+                            <option value="jogo">🎮 Jogo</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="analysis">Análise (opcional)</label>
+                        <textarea id="analysis" placeholder="Suas impressões, notas, avaliação..."></textarea>
+                    </div>
+                    <button type="submit" class="btn">Salvar Item</button>
+                    <button type="button" class="btn btn-secondary" id="cancel-edit" onclick="cancelEdit()" style="display:none">Cancelar Edição</button>
+                </form>
+            </div>
+
+            <!-- Aba Export/Import -->
+            <div id="export-tab" class="tab-content hidden">
+                <div class="export-import">
+                    <button class="btn" onclick="exportData()">📤 Exportar Dados</button>
+                    <input type="file" id="import-file" accept=".json" class="file-input">
+                    <button class="btn btn-secondary" onclick="importData()">📥 Importar Dados</button>
+                </div>
+                <p><strong>Exportar:</strong> Cria um arquivo JSON com todos seus dados.</p>
+                <p><strong>Importar:</strong> Carrega dados de um arquivo JSON exportado anteriormente.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let db;
+        let editingId = null;
+        let currentPage = 1;
+        let currentFilter = 'todos';
+        let currentSearch = '';
+        const PAGE_SIZE = 10;
+
+        // ——— IndexedDB ———
+        const initDB = () => new Promise((resolve, reject) => {
+            const request = indexedDB.open('MediaTrackerDB', 1);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => { db = request.result; resolve(db); };
+            request.onupgradeneeded = (e) => {
+                db = e.target.result;
+                const store = db.createObjectStore('items', { keyPath: 'id', autoIncrement: true });
+                store.createIndex('title', 'title', { unique: false });
+                store.createIndex('type', 'type', { unique: false });
+            };
+        });
+
+        const addItem    = (item) => new Promise((res, rej) => { const t = db.transaction(['items'],'readwrite'); const r = t.objectStore('items').add(item); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+        const updateItem = (item) => new Promise((res, rej) => { const t = db.transaction(['items'],'readwrite'); const r = t.objectStore('items').put(item); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+        const deleteItem = (id)   => new Promise((res, rej) => { const t = db.transaction(['items'],'readwrite'); const r = t.objectStore('items').delete(id); r.onsuccess=()=>res(); r.onerror=()=>rej(r.error); });
+        const getAllItems = ()     => new Promise((res, rej) => { const t = db.transaction(['items'],'readonly'); const r = t.objectStore('items').getAll(); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+
+        // ——— UI helpers ———
+        const showTab = (tabName) => {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+            const labels = { list:'Lista', add:'Adicionar', export:'Backup' };
+            const btn = Array.from(document.querySelectorAll('.tab')).find(t => t.textContent.includes(labels[tabName]));
+            if (btn) btn.classList.add('active');
+            document.getElementById(tabName + '-tab').classList.remove('hidden');
+            if (tabName === 'list') loadItems();
+        };
+
+        const formatDate = (date) => {
+            const d = new Date(date);
+            return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' });
+        };
+
+        const getTypeIcon = (type) => ({ filme:'🎬', livro:'📖', jogo:'🎮' }[type] || '📄');
+
+        const setFilter = (filter, btn) => {
+            currentFilter = filter;
+            currentPage = 1;
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            loadItems();
+        };
+
+        // ——— Render ———
+        const renderItems = (items) => {
+            const container = document.getElementById('items-container');
+            const pagDiv    = document.getElementById('pagination');
+
+            if (items.length === 0) {
+                container.innerHTML = '<div class="no-items">Nenhum item encontrado.</div>';
+                pagDiv.innerHTML = '';
+                return;
+            }
+
+            const totalPages = Math.ceil(items.length / PAGE_SIZE);
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            const start = (currentPage - 1) * PAGE_SIZE;
+            const pageItems = items.slice(start, start + PAGE_SIZE);
+
+            container.innerHTML = `
+                <div class="items-list">
+                    ${pageItems.map(item => `
+                        <div class="accordion-item" id="acc-${item.id}">
+                            <div class="accordion-header" onclick="toggleAccordion(${item.id})">
+                                <span class="type-icon">${getTypeIcon(item.type)}</span>
+                                <span class="accordion-title">${escapeHtml(item.title)}</span>
+                                <span class="type-badge badge-${item.type}">${item.type}</span>
+                                <span class="accordion-arrow">▼</span>
+                            </div>
+                            <div class="accordion-body" id="body-${item.id}">
+                                <div class="accordion-inner">
+                                    <div class="meta-date">Adicionado em: ${formatDate(item.createdAt)}</div>
+                                    ${item.analysis
+                                        ? `<div class="analysis-text">${escapeHtml(item.analysis)}</div>`
+                                        : `<div class="no-analysis">Sem análise registrada.</div>`
+                                    }
+                                    <div class="item-actions">
+                                        <button class="btn btn-secondary btn-sm" onclick="editItem(${item.id})">✏️ Editar</button>
+                                        <button class="btn btn-danger btn-sm" onclick="confirmDelete(${item.id})">🗑️ Excluir</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            // Paginação
+            if (totalPages <= 1) {
+                pagDiv.innerHTML = `<span class="page-info">${items.length} item${items.length !== 1 ? 's' : ''}</span>`;
+                return;
+            }
+
+            let pagHtml = `
+                <button class="page-btn" onclick="goPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>‹</button>
+            `;
+            for (let p = 1; p <= totalPages; p++) {
+                if (totalPages <= 7 || p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1) {
+                    pagHtml += `<button class="page-btn ${p === currentPage ? 'current' : ''}" onclick="goPage(${p})">${p}</button>`;
+                } else if (Math.abs(p - currentPage) === 2) {
+                    pagHtml += `<span class="page-info">…</span>`;
+                }
+            }
+            pagHtml += `
+                <button class="page-btn" onclick="goPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>›</button>
+                <span class="page-info">${items.length} itens</span>
+            `;
+            pagDiv.innerHTML = pagHtml;
+        };
+
+        const goPage = (p) => {
+            currentPage = p;
+            loadItems();
+            document.getElementById('list-tab').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+
+        const toggleAccordion = (id) => {
+            const header = document.querySelector(`#acc-${id} .accordion-header`);
+            const body   = document.getElementById(`body-${id}`);
+            const isOpen = body.classList.contains('open');
+
+            // Fecha todos
+            document.querySelectorAll('.accordion-body.open').forEach(b => b.classList.remove('open'));
+            document.querySelectorAll('.accordion-header.open').forEach(h => h.classList.remove('open'));
+
+            if (!isOpen) {
+                body.classList.add('open');
+                header.classList.add('open');
+            }
+        };
+
+        const escapeHtml = (str) => String(str)
+            .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/\n/g,'<br>');
+
+        // ——— Data ops ———
+        const loadItems = async () => {
+            try {
+                let items = await getAllItems();
+                items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+                if (currentFilter !== 'todos') {
+                    items = items.filter(i => i.type === currentFilter);
+                }
+                if (currentSearch) {
+                    items = items.filter(i => i.title.toLowerCase().includes(currentSearch.toLowerCase()));
+                }
+
+                renderItems(items);
+            } catch (error) {
+                console.error('Erro ao carregar itens:', error);
+            }
+        };
+
+        const editItem = async (id) => {
+            try {
+                const items = await getAllItems();
+                const item = items.find(i => i.id === id);
+                if (item) {
+                    document.getElementById('title').value = item.title;
+                    document.getElementById('type').value = item.type;
+                    document.getElementById('analysis').value = item.analysis || '';
+                    editingId = id;
+                    document.getElementById('cancel-edit').style.display = 'inline-block';
+                    showTab('add');
+                    setTimeout(() => document.getElementById('title').focus(), 100);
+                }
+            } catch (error) {
+                console.error('Erro ao editar item:', error);
+            }
+        };
+
+        const cancelEdit = () => {
+            editingId = null;
+            document.getElementById('item-form').reset();
+            document.getElementById('cancel-edit').style.display = 'none';
+            showTab('list');
+        };
+
+        const confirmDelete = (id) => {
+            if (confirm('Tem certeza que deseja excluir este item?')) {
+                deleteItem(id).then(loadItems).catch(() => alert('Erro ao excluir item'));
+            }
+        };
+
+        const exportData = async () => {
+            try {
+                const items = await getAllItems();
+                const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+                const dateStr = new Date().toLocaleDateString('pt-BR').replace(/\//g, '-');
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `filmes-jogos-${dateStr}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(a.href);
+            } catch (e) { alert('Erro ao exportar dados'); }
+        };
+
+        const importData = () => {
+            const fileInput = document.getElementById('import-file');
+            const file = fileInput.files[0];
+            if (!file) { alert('Selecione um arquivo para importar'); return; }
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!Array.isArray(data)) throw new Error('Formato inválido');
+                    for (const item of data) {
+                        if (!item.createdAt) item.createdAt = new Date().toISOString();
+                        delete item.id;
+                        await addItem(item);
+                    }
+                    alert(`${data.length} itens importados com sucesso!`);
+                    loadItems();
+                    fileInput.value = '';
+                } catch (e) { alert('Erro ao importar arquivo. Verifique se é válido.'); }
+            };
+            reader.readAsText(file);
+        };
+
+        // ——— Events ———
+        document.getElementById('item-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const title    = document.getElementById('title').value.trim();
+            const type     = document.getElementById('type').value;
+            const analysis = document.getElementById('analysis').value.trim();
+            if (!title || !type) { alert('Título e tipo são obrigatórios'); return; }
+
+            try {
+                if (editingId) {
+                    const items = await getAllItems();
+                    const existing = items.find(i => i.id === editingId);
+                    await updateItem({ id: editingId, title, type, analysis, createdAt: existing.createdAt, updatedAt: new Date().toISOString() });
+                    alert('Item atualizado com sucesso!');
+                    cancelEdit();
+                } else {
+                    await addItem({ title, type, analysis, createdAt: new Date().toISOString() });
+                    alert('Item adicionado com sucesso!');
+                    showTab('list');
+                }
+                document.getElementById('item-form').reset();
+                loadItems();
+            } catch (e) { alert('Erro ao salvar item'); }
+        });
+
+        document.getElementById('search').addEventListener('input', (e) => {
+            currentSearch = e.target.value;
+            currentPage = 1;
+            loadItems();
+        });
+
+        // ——— Init ———
+        initDB().then(() => loadItems()).catch(e => console.error('Erro ao inicializar banco:', e));
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('service-worker.js')
+                    .then(() => console.log('Service worker registered'))
+                    .catch(err => console.log('Service worker error:', err));
+            });
+        }
+    </script>
+</body>
+</html>
