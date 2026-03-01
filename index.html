@@ -17,11 +17,11 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 10px;
+            padding: 7px;
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1000px;
             margin: 0 auto;
             background: white;
             border-radius: 15px;
@@ -32,7 +32,7 @@
         .header {
             background: linear-gradient(45deg, #4CAF50, #45a049);
             color: white;
-            padding: 20px;
+            padding: 12px;
             text-align: center;
         }
 
@@ -47,15 +47,15 @@
             border-bottom: 1px solid #ddd;
         }
 
-        .tab {
-            flex: 1;
-            padding: 15px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            transition: all 0.3s;
-        }
+.tab {
+    flex: 1;
+    padding: 7px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s;
+}
 
         .tab.active {
             background: white;
@@ -84,11 +84,11 @@
 
         /* Filtros de tipo */
         .filter-bar {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 15px;
-            flex-wrap: wrap;
-        }
+    display: flex;
+    gap: 6px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
 
         .filter-btn {
             padding: 6px 14px;
@@ -215,14 +215,14 @@
         }
 
         .rating-selector {
-            display: flex;
-            gap: 4px;
-            flex-wrap: wrap;
-        }
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
 
         .rating-dot {
-            width: 30px;
-            height: 30px;
+            width: 28px;
+            height: 28px;
             border-radius: 50%;
             border: 2px solid #ddd;
             cursor: pointer;
@@ -423,6 +423,7 @@
             .header h1 { font-size: 1.4rem; }
             .content { padding: 12px; }
             .export-import { flex-direction: column; }
+            .filter-bar { justify-content: center; }
         }
     </style>
 </head>
@@ -513,7 +514,7 @@
         let currentFilter = 'todos';
         let currentSearch = '';
         let selectedRating = 0;
-        const PAGE_SIZE = 10;
+        const PAGE_SIZE = 7;
 
         // ——— Rating color scale ———
         const getRatingColor = (rating) => {
