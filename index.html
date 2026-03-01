@@ -171,6 +171,95 @@
         .badge-livro { background: #2196F3; }
         .badge-jogo  { background: #ff9800; }
 
+        /* Rating badge */
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: white;
+            flex-shrink: 0;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .rating-badge.no-rating {
+            background: #ccc;
+            font-size: 0.65rem;
+            font-weight: 600;
+        }
+
+        /* Left color bar on accordion header based on rating */
+        .accordion-header {
+            border-left: 4px solid transparent;
+        }
+
+        /* Rating stars input */
+        .rating-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 4px;
+        }
+
+        .rating-group label {
+            font-weight: bold;
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 0;
+        }
+
+        .rating-selector {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
+
+        .rating-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            cursor: pointer;
+            font-size: 0.78rem;
+            font-weight: 800;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s, border-color 0.15s;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .rating-dot:hover {
+            transform: scale(1.15);
+        }
+
+        .rating-dot.selected {
+            border-color: #333;
+            transform: scale(1.2);
+            box-shadow: 0 0 0 2px rgba(0,0,0,0.15);
+        }
+
+        .rating-dot.none-btn {
+            background: #ccc !important;
+            font-size: 0.6rem;
+            font-weight: 600;
+            color: #555;
+            text-shadow: none;
+        }
+
+        .rating-label-text {
+            font-size: 0.8rem;
+            color: #888;
+            font-style: italic;
+        }
+
         .accordion-arrow {
             flex-shrink: 0;
             font-size: 0.75rem;
@@ -389,6 +478,16 @@
                         <label for="analysis">Análise (opcional)</label>
                         <textarea id="analysis" placeholder="Suas impressões, notas, avaliação..."></textarea>
                     </div>
+
+                    <div class="form-group">
+                        <div class="rating-group">
+                            <label>Nota:</label>
+                            <div class="rating-selector" id="rating-selector">
+                                <div class="rating-dot none-btn selected" data-value="0" onclick="selectRating(0)">—</div>
+                            </div>
+                            <span class="rating-label-text" id="rating-label-text">Sem nota</span>
+                        </div>
+                    </div>
                     <button type="submit" class="btn">Salvar Item</button>
                     <button type="button" class="btn btn-secondary" id="cancel-edit" onclick="cancelEdit()" style="display:none">Cancelar Edição</button>
                 </form>
@@ -413,7 +512,40 @@
         let currentPage = 1;
         let currentFilter = 'todos';
         let currentSearch = '';
+        let selectedRating = 0;
         const PAGE_SIZE = 10;
+
+        // ——— Rating color scale ———
+        const getRatingColor = (rating) => {
+            if (!rating || rating === 0) return '#ccc';
+            // 1=red, 5=yellow, 10=green using HSL
+            // hue: 0 (red) → 60 (yellow) → 120 (green)
+            const hue = Math.round(((rating - 1) / 9) * 120);
+            const sat = 75;
+            const lig = rating <= 5 ? 45 : 40;
+            return `hsl(${hue}, ${sat}%, ${lig}%)`;
+        };
+
+        const getRatingLabel = (rating) => {
+            if (!rating || rating === 0) return 'Sem nota';
+            const labels = ['','Horrível','Muito ruim','Ruim','Abaixo da média','Regular','Bom','Muito bom','Ótimo','Excelente','Perfeito'];
+            return `${rating}/10 — ${labels[rating]}`;
+        };
+
+        const buildRatingSelector = () => {
+            const sel = document.getElementById('rating-selector');
+            sel.innerHTML = `<div class="rating-dot none-btn ${selectedRating === 0 ? 'selected' : ''}" data-value="0" onclick="selectRating(0)">—</div>`;
+            for (let i = 1; i <= 10; i++) {
+                const color = getRatingColor(i);
+                sel.innerHTML += `<div class="rating-dot ${selectedRating === i ? 'selected' : ''}" data-value="${i}" style="background:${color};border-color:${selectedRating === i ? '#333' : color}" onclick="selectRating(${i})">${i}</div>`;
+            }
+        };
+
+        const selectRating = (value) => {
+            selectedRating = value;
+            buildRatingSelector();
+            document.getElementById('rating-label-text').textContent = getRatingLabel(value);
+        };
 
         // ——— IndexedDB ———
         const initDB = () => new Promise((resolve, reject) => {
@@ -478,17 +610,24 @@
 
             container.innerHTML = `
                 <div class="items-list">
-                    ${pageItems.map(item => `
+                    ${pageItems.map(item => {
+                        const rColor = getRatingColor(item.rating);
+                        const hasRating = item.rating && item.rating > 0;
+                        return `
                         <div class="accordion-item" id="acc-${item.id}">
-                            <div class="accordion-header" onclick="toggleAccordion(${item.id})">
+                            <div class="accordion-header" onclick="toggleAccordion(${item.id})" style="border-left-color:${hasRating ? rColor : '#e0e0e0'}">
                                 <span class="type-icon">${getTypeIcon(item.type)}</span>
                                 <span class="accordion-title">${escapeHtml(item.title)}</span>
                                 <span class="type-badge badge-${item.type}">${item.type}</span>
+                                ${hasRating
+                                    ? `<span class="rating-badge" style="background:${rColor}">${item.rating}</span>`
+                                    : `<span class="rating-badge no-rating">—</span>`
+                                }
                                 <span class="accordion-arrow">▼</span>
                             </div>
                             <div class="accordion-body" id="body-${item.id}">
                                 <div class="accordion-inner">
-                                    <div class="meta-date">Adicionado em: ${formatDate(item.createdAt)}</div>
+                                    <div class="meta-date">Adicionado em: ${formatDate(item.createdAt)}${hasRating ? ` &nbsp;·&nbsp; <strong style="color:${rColor}">${getRatingLabel(item.rating)}</strong>` : ''}</div>
                                     ${item.analysis
                                         ? `<div class="analysis-text">${escapeHtml(item.analysis)}</div>`
                                         : `<div class="no-analysis">Sem análise registrada.</div>`
@@ -500,7 +639,8 @@
                                 </div>
                             </div>
                         </div>
-                    `).join('')}
+                        `;
+                    }).join('')}
                 </div>
             `;
 
@@ -556,11 +696,21 @@
         const loadItems = async () => {
             try {
                 let items = await getAllItems();
-                items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
                 if (currentFilter !== 'todos') {
                     items = items.filter(i => i.type === currentFilter);
+                    // Sort by rating desc (no rating goes to end), then by date
+                    items.sort((a, b) => {
+                        const ra = a.rating || 0;
+                        const rb = b.rating || 0;
+                        if (rb !== ra) return rb - ra;
+                        return new Date(b.createdAt) - new Date(a.createdAt);
+                    });
+                } else {
+                    // "Todos" -> sort by date
+                    items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 }
+
                 if (currentSearch) {
                     items = items.filter(i => i.title.toLowerCase().includes(currentSearch.toLowerCase()));
                 }
@@ -579,6 +729,9 @@
                     document.getElementById('title').value = item.title;
                     document.getElementById('type').value = item.type;
                     document.getElementById('analysis').value = item.analysis || '';
+                    selectedRating = item.rating || 0;
+                    buildRatingSelector();
+                    document.getElementById('rating-label-text').textContent = getRatingLabel(selectedRating);
                     editingId = id;
                     document.getElementById('cancel-edit').style.display = 'inline-block';
                     showTab('add');
@@ -591,7 +744,10 @@
 
         const cancelEdit = () => {
             editingId = null;
+            selectedRating = 0;
             document.getElementById('item-form').reset();
+            buildRatingSelector();
+            document.getElementById('rating-label-text').textContent = 'Sem nota';
             document.getElementById('cancel-edit').style.display = 'none';
             showTab('list');
         };
@@ -645,18 +801,22 @@
             const title    = document.getElementById('title').value.trim();
             const type     = document.getElementById('type').value;
             const analysis = document.getElementById('analysis').value.trim();
+            const rating   = selectedRating;
             if (!title || !type) { alert('Título e tipo são obrigatórios'); return; }
 
             try {
                 if (editingId) {
                     const items = await getAllItems();
                     const existing = items.find(i => i.id === editingId);
-                    await updateItem({ id: editingId, title, type, analysis, createdAt: existing.createdAt, updatedAt: new Date().toISOString() });
+                    await updateItem({ id: editingId, title, type, analysis, rating, createdAt: existing.createdAt, updatedAt: new Date().toISOString() });
                     alert('Item atualizado com sucesso!');
                     cancelEdit();
                 } else {
-                    await addItem({ title, type, analysis, createdAt: new Date().toISOString() });
+                    await addItem({ title, type, analysis, rating, createdAt: new Date().toISOString() });
                     alert('Item adicionado com sucesso!');
+                    selectedRating = 0;
+                    buildRatingSelector();
+                    document.getElementById('rating-label-text').textContent = 'Sem nota';
                     showTab('list');
                 }
                 document.getElementById('item-form').reset();
@@ -671,7 +831,7 @@
         });
 
         // ——— Init ———
-        initDB().then(() => loadItems()).catch(e => console.error('Erro ao inicializar banco:', e));
+        initDB().then(() => { buildRatingSelector(); loadItems(); }).catch(e => console.error('Erro ao inicializar banco:', e));
 
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
